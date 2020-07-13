@@ -19,7 +19,7 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleException(Throwable exception) {
         ErrorResponse errorResponse = new ErrorResponse(
-                exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, Arrays.asList(INTERNAL_ERROR));
+                INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, Arrays.asList(INTERNAL_ERROR));
         log.warn(HttpStatus.INTERNAL_SERVER_ERROR + " " + exception.getMessage(), exception);
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }

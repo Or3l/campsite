@@ -33,12 +33,6 @@ class BookingControllerIntegrationTest {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
-//    @BeforeAll
-//    @Sql({"classpath:data.sql"})
-//    public static void beforeAll(){
-//
-//    }
-
     @Test
     void getAvailability() throws Exception {
         MvcResult result = mvc.perform(get("/bookings/availabilities")
