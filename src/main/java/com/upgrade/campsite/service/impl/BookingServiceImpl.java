@@ -130,9 +130,6 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.save(booking);
     }
 
-    private Booking findBookingById(UUID bookingId) {
-        return bookingRepository.findById(bookingId).orElseThrow(() -> new NotFoundException(BOOKING_NOT_FOUND));
-    }
 
     private List<DateAvailability> getDateAvailabilitiesNotBooked(String start, String end){
         LocalDate arrival, departure;
@@ -150,6 +147,11 @@ public class BookingServiceImpl implements BookingService {
 
         checkArrivalIsBeforeDeparture(arrival, departure);
         return dateAvailabilityRepository.findAllByBookedFalseAndDayBetween(arrival, departure);
+    }
+
+
+    private Booking findBookingById(UUID bookingId) {
+        return bookingRepository.findById(bookingId).orElseThrow(() -> new NotFoundException(BOOKING_NOT_FOUND));
     }
 
     private void validateBooking(LocalDate arrival, LocalDate departure, Set<LocalDate> availabilities) {
