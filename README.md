@@ -24,3 +24,4 @@ In a real world scenario, I would probably go for a event source design.
 2. All dates are in UTC and the server uses UTC for date comparisons
 3. "The campsite can be reserved minimum one day ahead" -> If now is 2020-07-13 00:0:01, a user won't be able to book 
 for 2020-07-14 
+4. arrival = 2020-07-17 and departure = 2020-07-17 -> book the 2020-07-17
