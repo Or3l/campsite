@@ -88,7 +88,7 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.delete(booking);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
     public Booking updateBooking(UUID bookingId, BookingPatchRequest bookingPatchRequest) {
         Booking booking = findBookingById(bookingId);

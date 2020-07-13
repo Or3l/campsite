@@ -1,7 +1,9 @@
 package com.upgrade.campsite.service.impl;
 
 import com.upgrade.campsite.data.entity.Booking;
+import com.upgrade.campsite.data.entity.DateAvailability;
 import com.upgrade.campsite.data.repository.BookingRepository;
+import com.upgrade.campsite.data.repository.DateAvailabilityRepository;
 import com.upgrade.campsite.dto.BookingPatchRequest;
 import com.upgrade.campsite.dto.BookingPostRequest;
 import com.upgrade.campsite.utils.UtilsDate;
@@ -25,13 +27,16 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class BookingServiceImplTest {
+class BookingServiceImplIntegrationTest {
 
     @SpyBean
     private BookingServiceImpl bookingService;
 
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private DateAvailabilityRepository dateAvailabilityRepository;
 
 
     @Test
@@ -48,18 +53,16 @@ class BookingServiceImplTest {
                 .fullName(fullName).build();
 
         BookingPostRequest bookingPostRequest2 = BookingPostRequest.builder()
-                .arrival(arrival.plusDays(1).toString())
+                .arrival(arrival.toString())
                 .departure(departure.toString())
                 .email(email)
                 .fullName(fullName).build();
 
         BookingPostRequest bookingPostRequest3 = BookingPostRequest.builder()
-                .arrival(arrival.plusDays(2).toString())
+                .arrival(arrival.toString())
                 .departure(departure.toString())
                 .email(email)
                 .fullName(fullName).build();
-
-
 
         List<BookingPostRequest> bookingPostRequestList = Arrays.asList(bookingPostRequest1, bookingPostRequest2, bookingPostRequest3);
 
@@ -78,9 +81,61 @@ class BookingServiceImplTest {
             }
         }
 
-        List<Booking> booking = bookingRepository.findAllByArrivalBetweenAndDepartureBetween(arrival, departure);
-        assertEquals(1, booking.size());
+        List<Booking> bookings = bookingRepository.findAllByArrivalBetweenAndDepartureBetween(arrival, departure);
+        List<DateAvailability> dateAvailabilities = dateAvailabilityRepository.findAllByDayBetween(arrival, departure);
+        assertEquals(1, bookings.size());
+        for(DateAvailability dateAvailability: dateAvailabilities){
+            //check there has been only one update
+            assertEquals(1, dateAvailability.getVersion());
+        }
         verify(bookingService, times(3)).createBooking(any());
+    }
+
+    @Test
+    @Sql(scripts = {"classpath:reset.sql"}, executionPhase = AFTER_TEST_METHOD)
+    void createBooking_when_multiple_user_book_overlap_range() throws InterruptedException {
+        String email = "test@email.com";
+        String fullName = "fullName";
+        LocalDate arrival = UtilsDate.getLocalDateUTC().plusDays(2);
+        LocalDate departure = UtilsDate.getLocalDateUTC().plusDays(4);
+        BookingPostRequest bookingPostRequest1 = BookingPostRequest.builder()
+                .arrival(arrival.toString())
+                .departure(departure.toString())
+                .email(email)
+                .fullName(fullName).build();
+
+        LocalDate overlapArrival = arrival.plusDays(1);
+        BookingPostRequest bookingPostRequest2 = BookingPostRequest.builder()
+                .arrival(overlapArrival.toString())
+                .departure(departure.toString())
+                .email(email)
+                .fullName(fullName).build();
+
+        List<BookingPostRequest> bookingPostRequestList = Arrays.asList(bookingPostRequest1, bookingPostRequest2);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(bookingPostRequestList.size());
+        List<Callable<Booking>> callables = new ArrayList<>(bookingPostRequestList.size());
+        for(BookingPostRequest bookingPostRequest: bookingPostRequestList){
+            callables.add(()-> bookingService.createBooking(bookingPostRequest));
+        }
+        List<Future<Booking>> futures = executorService.invokeAll(callables);
+        executorService.shutdown();
+        for(Future<Booking> future: futures){
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        List<Booking> bookings = bookingRepository.findAllByArrivalBetweenAndDepartureBetween(arrival, departure);
+        List<DateAvailability> dateAvailabilities = dateAvailabilityRepository.findAllByDayBetween(overlapArrival, departure);
+        assertEquals(1, bookings.size());
+        for(DateAvailability dateAvailability: dateAvailabilities){
+            //check there has been only one update
+            assertEquals(1, dateAvailability.getVersion());
+        }
+        verify(bookingService, times(2)).createBooking(any());
     }
 
     @Test
@@ -128,6 +183,12 @@ class BookingServiceImplTest {
         }
 
         List<Booking> booking = bookingRepository.findAllByArrivalBetweenAndDepartureBetween(newArrival, newDeparture);
+        List<DateAvailability> dateAvailabilities = dateAvailabilityRepository.findAllByDayBetween(newArrival, newDeparture);
+
+        for(DateAvailability dateAvailability: dateAvailabilities){
+            //check there has been only one update
+            assertEquals(1, dateAvailability.getVersion());
+        }
         assertEquals(1, booking.size());
         verify(bookingService, times(2)).updateBooking(any(), any());
     }
