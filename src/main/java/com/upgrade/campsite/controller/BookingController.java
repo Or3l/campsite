@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@RestController()
+@RequestMapping("/bookings")
+@RestController
 public class BookingController {
 
     private BookingService bookingService;
@@ -26,30 +27,30 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    @GetMapping(value = "/bookings/availabilities")
+    @GetMapping(value = "/availabilities")
     public List<String> getAvailabilities(@RequestParam(required = false) String start, @RequestParam(required = false) String end) {
         return bookingService.getAvailabilities(start, end).stream().map(LocalDate::toString).sorted().collect(Collectors.toList());
     }
 
-    @PostMapping(value = "/bookings")
+    @PostMapping(value = "")
     public ResponseEntity<BookingResponse> createBooking(@RequestBody BookingPostRequest bookingPostRequest) {
         Booking booking = bookingService.createBooking(bookingPostRequest);
         return new ResponseEntity<>(ConverterBooking.convertEntity(booking), HttpStatus.CREATED);
     }
 
-    @PatchMapping(value = "/bookings/{id}")
+    @PatchMapping(value = "/{id}")
     public ResponseEntity<BookingResponse> updateBooking(@PathVariable UUID id, @RequestBody BookingPatchRequest bookingPatchRequest) {
         Booking booking = bookingService.updateBooking(id, bookingPatchRequest);
         return new ResponseEntity<>(ConverterBooking.convertEntity(booking), HttpStatus.OK);
     }
 
-    @DeleteMapping(value = "/bookings/{id}")
+    @DeleteMapping(value = "/{id}")
     public ResponseEntity<String> deleteBooking(@PathVariable UUID id) {
         bookingService.deleteBooking(id);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/bookings/{id}")
+    @GetMapping(value = "/{id}")
     public ResponseEntity<BookingResponse> getBooking(@PathVariable UUID id){
         Booking booking = bookingService.findBookingById(id);
         return new ResponseEntity<>(ConverterBooking.convertEntity(booking), HttpStatus.OK);
