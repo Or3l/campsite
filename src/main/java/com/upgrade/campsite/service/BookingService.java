@@ -18,4 +18,6 @@ public interface BookingService {
 
     Booking updateBooking(UUID bookingId, BookingPatchRequest bookingPatchRequest);
 
+    Booking findBookingById(UUID bookingId);
+
 }

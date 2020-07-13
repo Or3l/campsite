@@ -150,7 +150,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
 
-    private Booking findBookingById(UUID bookingId) {
+    public Booking findBookingById(UUID bookingId) {
         return bookingRepository.findById(bookingId).orElseThrow(() -> new NotFoundException(BOOKING_NOT_FOUND));
     }
 

@@ -48,4 +48,10 @@ public class BookingController {
         bookingService.deleteBooking(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping(value = "/bookings/{id}")
+    public ResponseEntity<BookingResponse> getBooking(@PathVariable UUID id){
+        Booking booking = bookingService.findBookingById(id);
+        return new ResponseEntity<>(ConverterBooking.convertEntity(booking), HttpStatus.OK);
+    }
 }
